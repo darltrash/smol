@@ -1,0 +1,28 @@
+values:
+    OS (String) (Read-Only): 
+        The OS on where Smol is running
+
+        Examples:
+            - Windows
+            - Linux
+            - MacOS
+            - iOS
+            - Android
+
+    backend (String) (Read-Only): 
+        The graphics API backend used for Smol
+
+        Examples:
+            - GL 3.3
+            - GLES 3
+            - GLES 2 (Linux, Android, Raspberry Pi)
+            - Metal (iOS, MacOS)
+            - DirectX11 (Windows)
+
+    width (Number) (Read-Only):
+        The current window width 
+
+    height (Number) (Read-Only):
+        The current window height 
+
+    
