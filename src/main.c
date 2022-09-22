@@ -92,7 +92,7 @@ void init(void)
 
     uint32_t indices[SMOL_QUAD_AMOUNT * 6]; 
     for (int i = 0; i < SMOL_QUAD_AMOUNT; i++) {
-        uint16_t tmp[6] = {
+        uint32_t tmp[6] = {
             (i*4)+0, (i*4)+1, (i*4)+3, 
             (i*4)+1, (i*4)+2, (i*4)+3
         };
@@ -245,6 +245,7 @@ void frame(void)
     timer += sapp_frame_duration();
     smst_lua_set_number("width",  sapp_width());
     smst_lua_set_number("height", sapp_height());
+    smst_lua_set_number("fps",    1.0/sapp_frame_duration());
     smst_lua_set_number("delta",  sapp_frame_duration());
     smst_lua_set_number("frame",  sapp_frame_count());
     smst_lua_set_number("timer",  timer);
@@ -391,40 +392,42 @@ int sm_lerp() {
     return 1;
 }
 
-sg_color sm_color_internal(sg_color o) {
-    sg_color c = o;
-
+int sm_color_internal(sg_color *c) {
     if (!lua_isnoneornil(smst_lua, 1)) {
         if (lua_gettop(smst_lua)==1) {
             int value = luaL_checkinteger(smst_lua, 1);
-            c.r = (float)((value & 0xff000000) >> 24)/255;
-            c.g = (float)((value & 0x00ff0000) >> 16)/255;
-            c.b = (float)((value & 0x0000ff00) >> 8 )/255;
-            c.a = (float)((value & 0x000000ff)      )/255;
+            c->r = (float)((value & 0xff000000) >> 24)/255;
+            c->g = (float)((value & 0x00ff0000) >> 16)/255;
+            c->b = (float)((value & 0x0000ff00) >> 8 )/255;
+            c->a = (float)((value & 0x000000ff)      )/255;
 
         } else if (lua_isnumber(smst_lua, 1)) {
-            c.r = luaL_checknumber(smst_lua, 1);
-            c.g = luaL_checknumber(smst_lua, 2);
-            c.b = luaL_checknumber(smst_lua, 3);
-            c.a = luaL_checknumber(smst_lua, 4);
+            c->r = luaL_checknumber(smst_lua, 1);
+            c->g = luaL_checknumber(smst_lua, 2);
+            c->b = luaL_checknumber(smst_lua, 3);
+            c->a = luaL_checknumber(smst_lua, 4);
         }
     } 
 
-    return c;
+    lua_pushnumber(smst_lua, c->r);
+    lua_pushnumber(smst_lua, c->g);
+    lua_pushnumber(smst_lua, c->b);
+    lua_pushnumber(smst_lua, c->a);
+
+    return 4;
 }
 
 int sm_color() {
-    smst_color = sm_color_internal(smst_color);
-    return 1;
+    return sm_color_internal(&smst_color);
 }
 
 int sm_backcolor() {
-    smst_backcolor = sm_color_internal(smst_backcolor);
-    return 1;
+    return sm_color_internal(&smst_backcolor);
 }
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
+#define floorto(a, b) (floor(a/b)*b)
 
 int sm_rect() {
     // This function appends to a clip-space quad vertex buffer
@@ -444,28 +447,16 @@ int sm_rect() {
     w = luaL_checknumber(smst_lua, -2);
     h = luaL_checknumber(smst_lua, -1);
 
-    static bool sus = false;
-    if (!sus)
-        printf("%f, %f, %f, %f\n", x, y, w, h);
-    sus = true;
+    const double d = 1.0 / (double)(smst_scale);
+    const double ww = sapp_widthf()  * d;
+    const double wh = sapp_heightf() * d;
 
-    const double d = (double)(smst_scale*2.0);
-    const double sw = floor(sapp_widthf()  / 2.0) * (2.0 / d);
-    const double sh = floor(sapp_heightf() / 2.0) * (2.0 / d);
+    const double sx = (smst_camera[0]+x) / ww;
+    const double sy = (smst_camera[1]-y) / wh;
+    const double cx = sx + (w / ww);
+    const double cy = sy - (h / wh);
 
-    const double sx = (-smst_camera[0] + x) / sw;
-    const double sy = ( smst_camera[1] - y) / sh;
-    const double cx = sx + (w * smst_scale  / sw);
-    const double cy = sy - (h * smst_scale  / sh);
-
-    // TODO: Simplify this god forsaken operation.
-    if (
-        ((abs((int)sx) < 1) & (abs((int)sy) < 1)) 
-     || ((abs((int)cx) < 1) & (abs((int)cy) < 1))
-     || ((abs((int)sx) < 1) & (abs((int)cy) < 1)) 
-     || ((abs((int)cx) < 1) & (abs((int)sy) < 1))
-       ) {
-
+    if (true) {
         const float usx = 0.0; //(double)(spr.x)       / SMOL_TEXTURE_WIDTH;
         const float usy = 0.0; //(double)(spr.y)       / SMOL_TEXTURE_HEIGHT;
         const float ucx = 0.0; //(double)(spr.x+spr.w) / SMOL_TEXTURE_WIDTH; 
@@ -481,9 +472,13 @@ int sm_rect() {
 
         memcpy(&smst_vertices[smst_quads * 4 * (2+2+4)], &q, sizeof(q));
         smst_quads++;
+
+        lua_pushboolean(smst_lua, true);
+        return 1;
     }
 
-    return 0;
+    lua_pushboolean(smst_lua, false);
+    return 1;
 }
 
 void sm_quit() {

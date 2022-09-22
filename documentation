@@ -26,6 +26,9 @@ values:
     height (Number) (Read-Only):
         The current window height 
 
+    fps (Number) (Read-Only):
+        Frames per second.
+
     delta (Number) (Read-Only):
         Time past since last frame (In seconds).
 
@@ -33,7 +36,8 @@ values:
         Time past since program started (In seconds).
 
     quads (Number) (Read-Only):
-        Amount of quads/sprites/rectangles drawn.
+        Amount of quads/sprites/rectangles drawn last frame.
+        This only counts sprites that can fit on the screen.
 
 callbacks:
     sm.load():
