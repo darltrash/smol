@@ -7,10 +7,10 @@ out vec2 uv;
 out vec4 color;
 
 void main() {
-    gl_Position = vec4(vx_pos_uv.xy, 1.0, 1.0);
     uv = vx_pos_uv.zw;
     color = vx_color;
-    color.xy *= uv;
+    
+    gl_Position = vec4(vx_pos_uv.xy, 0.0, 1.0);
 }
 @end
 

@@ -18,11 +18,12 @@
 
 sg_bindings smst_bindings;
 sg_pipeline smst_pipeline;
+sg_pass_action smst_pass_action;
 
 lua_State *smst_lua = NULL;
 
 sg_color smst_color = {1., 1., 1., 1.};
-sg_color smst_backcolor = {0., 0., 0., 0.};
+sg_color smst_backcolor = {0., 0., 0., 1.};
 
 int smst_quads;
 char *smst_folder = NULL;
@@ -32,7 +33,7 @@ map_char_t smst_keys;
 
 float smst_vertices[SMOL_QUAD_AMOUNT * (2+2+4)];
 float smst_camera[2] = { 0.0, 0.0 }; 
-float smst_scale = 1;
+float smst_scale = 2.0;
 
 void smst_lua_set_number(const char* str, double v) {
     lua_getglobal(smst_lua, "sm");
@@ -65,6 +66,13 @@ void init(void)
         exit(1);
     };
 
+    smst_pass_action = (sg_pass_action) {
+        .colors[0] = {
+            .action = SG_ACTION_CLEAR,
+            .value = smst_backcolor
+        }
+    };
+
     smst_pipeline = sg_make_pipeline(&(sg_pipeline_desc){
         .shader = sg_make_shader(quad_shader_desc(sg_query_backend())),
         .layout = {
@@ -83,26 +91,24 @@ void init(void)
     });
 
     uint32_t indices[SMOL_QUAD_AMOUNT * 6]; 
-    for (size_t a=0; a <= SMOL_QUAD_AMOUNT; a++) {
-        indices[(a*6)+0] = (a*4)+0;
-        indices[(a*6)+1] = (a*4)+1;
-        indices[(a*6)+2] = (a*4)+3;
-        indices[(a*6)+3] = (a*4)+1;
-        indices[(a*6)+4] = (a*4)+2;
-        indices[(a*6)+5] = (a*4)+3;
+    for (int i = 0; i < SMOL_QUAD_AMOUNT; i++) {
+        uint16_t tmp[6] = {
+            (i*4)+0, (i*4)+1, (i*4)+3, 
+            (i*4)+1, (i*4)+2, (i*4)+3
+        };
+        memcpy(&indices[i*6], &tmp, sizeof(tmp));
     }
 
     smst_bindings = (sg_bindings) {
         .vertex_buffers[0] = sg_make_buffer(&(sg_buffer_desc){
             .size = SMOL_QUAD_AMOUNT * 36 * sizeof(float),
-            .usage = SG_USAGE_STREAM,
-            .label = "quad-vertices"
+            .type = SG_BUFFERTYPE_VERTEXBUFFER,
+            .usage = SG_USAGE_DYNAMIC
         }),
 
         .index_buffer = sg_make_buffer(&(sg_buffer_desc){
             .type = SG_BUFFERTYPE_INDEXBUFFER,
-            .data = SG_RANGE(indices),
-            .label = "quad-indices"
+            .data = SG_RANGE(indices)
         })
     };
 }
@@ -232,13 +238,17 @@ void cleanup(void)
     sg_shutdown();
 }
 
+double timer;
 void frame(void)
 {
-    lua_getglobal(smst_lua, "sm");
-    lua_pushstring(smst_lua, "delta");
-    lua_pushnumber(smst_lua, sapp_frame_duration());
-    lua_settable(smst_lua, -3);
-    lua_pop(smst_lua, 1);
+
+    timer += sapp_frame_duration();
+    smst_lua_set_number("width",  sapp_width());
+    smst_lua_set_number("height", sapp_height());
+    smst_lua_set_number("delta",  sapp_frame_duration());
+    smst_lua_set_number("frame",  sapp_frame_count());
+    smst_lua_set_number("timer",  timer);
+    smst_lua_set_number("quads",  smst_quads);
 
     lua_getglobal(smst_lua, "sm");
     lua_getfield(smst_lua, -1, "loop");
@@ -248,34 +258,26 @@ void frame(void)
         exit(1);
     };
 
-    smst_lua_set_number("width",  sapp_width());
-    smst_lua_set_number("height", sapp_height());
-    smst_lua_set_number("quads",  smst_quads);
     smst_quads = 0;
 
-    sg_begin_default_pass(
-        &(sg_pass_action) {
-            .colors[0] = {
-                .action = SG_ACTION_CLEAR,
-                .value = smst_backcolor
-            }
-        }, sapp_width(), sapp_height());
+    lua_getglobal(smst_lua, "sm");
+    lua_getfield(smst_lua, -1, "draw");
+    if (lua_pcall(smst_lua, 0, 0, 0)) {
+        log_fatal("Failed to run sm.draw: \n>\t%s\n", lua_tostring(smst_lua, -1));
+        exit(EXIT_FAILURE);
+    };
 
-        lua_getglobal(smst_lua, "sm");
-        lua_getfield(smst_lua, -1, "draw");
-        if (lua_pcall(smst_lua, 0, 0, 0)) {
-            log_fatal("Failed to run sm.draw: \n>\t%s\n", lua_tostring(smst_lua, -1));
-            exit(EXIT_FAILURE);
-        };
+    smst_pass_action.colors[0].value = smst_backcolor;
 
-        sg_update_buffer(smst_bindings.vertex_buffers[0], &SG_RANGE(smst_vertices));
+    sg_update_buffer(smst_bindings.vertex_buffers[0], &SG_RANGE(smst_vertices));
+
+    sg_begin_default_pass(&smst_pass_action, sapp_width(), sapp_height());
 
         sg_apply_pipeline(smst_pipeline);
         sg_apply_bindings(&smst_bindings);
-        
-        //sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &SG_RANGE(smst_vs_params));
+        if (smst_quads > 0)
+            sg_draw(0, smst_quads*6, 1);
 
-        sg_draw(0, smst_quads*6, 1);
     sg_end_pass();
 
     sg_commit();
@@ -326,12 +328,12 @@ int sm_setup(lua_State *L) {
 
 int sm_mouse() {
     if (!lua_isnoneornil(smst_lua, 1)) {
-        char *idea[4] = {
-            "left", "middle", "right", NULL
-        };
+        int option = luaL_checkinteger(smst_lua, 1);
+        
+        if (option > 3 || option < 1)
+            luaL_error(smst_lua, "Expected mouse button to be in the range of 1 to 3, got '%i'");
 
-        int option = luaL_checkoption(smst_lua, 1, NULL, idea);
-        lua_pushboolean(smst_lua, smst_mouse.buttons[option]);
+        lua_pushboolean(smst_lua, smst_mouse.buttons[option-1]);
 
         return 1;
     }
@@ -392,7 +394,7 @@ int sm_lerp() {
 sg_color sm_color_internal(sg_color o) {
     sg_color c = o;
 
-    if (lua_isnoneornil(smst_lua, 1)) {
+    if (!lua_isnoneornil(smst_lua, 1)) {
         if (lua_gettop(smst_lua)==1) {
             int value = luaL_checkinteger(smst_lua, 1);
             c.r = (float)((value & 0xff000000) >> 24)/255;
@@ -436,15 +438,20 @@ int sm_rect() {
         return 1;
     }
 
-    float x, y, w, h;
+    double x, y, w, h;
     x = luaL_checknumber(smst_lua, -4);
     y = luaL_checknumber(smst_lua, -3);
     w = luaL_checknumber(smst_lua, -2);
     h = luaL_checknumber(smst_lua, -1);
 
-    const double d = (double)(smst_scale*2);
-    const double sw = floor(sapp_widthf()  / 2) * (2 / d);
-    const double sh = floor(sapp_heightf() / 2) * (2 / d);
+    static bool sus = false;
+    if (!sus)
+        printf("%f, %f, %f, %f\n", x, y, w, h);
+    sus = true;
+
+    const double d = (double)(smst_scale*2.0);
+    const double sw = floor(sapp_widthf()  / 2.0) * (2.0 / d);
+    const double sh = floor(sapp_heightf() / 2.0) * (2.0 / d);
 
     const double sx = (-smst_camera[0] + x) / sw;
     const double sy = ( smst_camera[1] - y) / sh;
