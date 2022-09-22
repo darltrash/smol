@@ -1,0 +1,58 @@
+This file goes over what Smol is, what it is trying to be,
+what it aims to support and what it aims to support not.
+
+- Smol runs (almost) everywhere:
+    It's written in C99 plus Lua 5.4, even though I considered to use 
+    LuaJIT instead because of performance, but it ended up negatively
+    affecting the amount of hardware that could run Smol and the kinds
+    of things it'd need to work properly.
+
+    It also aims to be a small binary on itself with a small footprint
+    (Probably just a couple KB, 1MB at max) plus work under GLES2-only 
+    machines and old PostmarketOS devices.
+
+    It should run on anything where GLES2 can run, which is
+    available even on old, low-end mobile GPUs like the Mali 400
+
+    Android and iOS support isnt planned yet, But I am looking
+    forwards to supporting Mobile Linux platforms (PostmarketOS)
+
+    I see potential on Smol also becoming a good platform for making
+    simple web games, even though I severely dislike a lot of web 
+    standards, I just would love to see something like Smol exist online.
+
+    This is mostly a personal thing anyways.
+
+- Smol aims to tackle some stuff away, but not all:
+    It tries to spare you from having to fiddle you with X or Y,
+    while also running on the best available graphic API for the
+    platform it's being ran on.
+
+    But things like collision handling and vector math are simply
+    out of scope for Smol, as it really only tries to give you a 
+    nice window and simple graphic API abstraction for most platforms.
+
+    I am still considering to add other features to Smol, like audio!
+
+- Smol aims to be simple:
+    The idea is that Smol can be learnt by anyone who wants to get
+    their hands into writing their own games, like a fantasy console,
+    without the fantasy, nor the console.
+
+    It has a clear use of simple callbacks and simple functions,
+    plus "global" properties you can use to fetch things like:
+        - OS targetted
+        - Backend targetted
+        - Window properties
+        - ETC
+
+    It tries to stay away from obsessive structuring practices
+    and lets you organize things however you want, from all sorts of
+    complex inherited OOP instances to flat arrays containing rectangles.
+
+    No rules for what you can make or not, as long as you follow some
+    basic rules like drawing only on the sm.draw callback.
+
+- Smol takes inspiration:
+    Smol has a ton of inspiration from Löve, TIC-80 and my own small 
+    game engines written in Lua.

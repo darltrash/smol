@@ -8,14 +8,15 @@ values:
             - MacOS
             - iOS
             - Android
+            - Web
 
     backend (String) (Read-Only): 
         The graphics API backend used for Smol
 
         Examples:
             - GL 3.3
-            - GLES 3
-            - GLES 2 (Linux, Android, Raspberry Pi)
+            - GLES 3 (Web?)
+            - GLES 2 (Linux, Android, Raspberry Pi, Web)
             - Metal (iOS, MacOS)
             - DirectX11 (Windows)
 
@@ -25,4 +26,74 @@ values:
     height (Number) (Read-Only):
         The current window height 
 
-    
+    delta (Number) (Read-Only):
+        Time past since last frame (In seconds).
+
+    timer (Number) (Read-Only):
+        Time past since program started (In seconds).
+
+    quads (Number) (Read-Only):
+        Amount of quads/sprites/rectangles drawn.
+
+callbacks:
+    sm.load():
+        Runs only once after the window is created and everything's 
+        ready to be used.
+
+        Normally useful for loading things like textures or maps!
+
+    sm.loop():
+        Runs every single frame after the window is created and set-up,
+        it cannot render anything into the screen and should only be used
+        for processing logic, and not graphics.
+
+    sm.draw():
+        Runs every single frame after the window is created and set-up, and
+        unlike sm.loop, this one is designed specifically for rendering and
+        hopefully rendering-only!
+
+    sm.event(event (String), ...):
+        This runs after any interaction with the window/program
+        whatsoever, from touches to mouse scroll!
+
+        Available events:
+            - "resize":
+                The window has been resized, "..." is the new 
+                width and height as 2 numbers.
+
+            - "focused":
+                The window has been focused
+
+            - "unfocused":
+                The window has been unfocused
+
+
+            - "mouse down":
+                Mouse click, "..." is the mouse button pressed (Number)
+
+            - "mouse up":
+                Mouse release, "..." is the mouse button pressed (Number)
+
+            - "mouse move":
+                Mouse movement, "..." is the new X and Y of the 
+                cursor as 2 numbers.
+
+            - "mouse scroll":
+                Mouse scroll, "..." is the new X and Y of the 
+                cursor scroll movement as 2 numbers.
+
+            - "mouse enter": 
+                Mouse has entered the window
+  
+            - "mouse leave": 
+                Mouse has left the window
+
+
+            - "key up":
+                Key release, "..." is the key pressed (String)
+
+            - "key down":
+                Key press, "..." is the key pressed (String)
+
+            - "text":
+                Text input, "..." is a new text input snippet (String)
