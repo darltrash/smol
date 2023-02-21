@@ -1,58 +1,59 @@
-This file goes over what Smol is, what it is trying to be,
-what it aims to support and what it aims to support not.
+Graphics:
+    Smol stores everything into a single buffer, then does ONE GPU call 
+    to render absolutely everything, by uploading things from an static
+    buffer in RAM to VRAM at the end of each frame, to then render it all 
+    as one big element, reducing latency
 
-- Smol runs (almost) everywhere:
-    It's written in C99 plus Lua 5.4, even though I considered to use 
-    LuaJIT instead because of performance, but it ended up negatively
-    affecting the amount of hardware that could run Smol and the kinds
-    of things it'd need to work properly.
+    It also uses a simple coordinate system which goes from -(w/2) to w/2
+    and -(h/2) to h/2, unlike Löve's or Tic-80's
 
-    It also aims to be a small binary on itself with a small footprint
-    (Probably just a couple KB, 1MB at max) plus work under GLES2-only 
-    machines and old PostmarketOS devices.
+    It also only focuses on drawing quads, but I am considering to expand
+    upon the concept by making the buffer system more generalized.
 
-    It should run on anything where GLES2 can run, which is
-    available even on old, low-end mobile GPUs like the Mali 400
+    I am considering to store every single texture into the same metatexture,
+    so we can keep the single-buffer strategy and make it faster.
 
-    Android and iOS support isnt planned yet, But I am looking
-    forwards to supporting Mobile Linux platforms (PostmarketOS)
+Form-factor:
+    Smol is one single, super small binary and it would be neat if it was
+    static but that's simply not possible on linux in this current setup.
 
-    I see potential on Smol also becoming a good platform for making
-    simple web games, even though I severely dislike a lot of web 
-    standards, I just would love to see something like Smol exist online.
+    Smol uses Lua as it's scripting language, mostly because I personally
+    enjoy using Lua a lot, and because it's super simple to bundle in, plus
+    mega portable.
 
-    This is mostly a personal thing anyways.
+    Smol bundles it's own Lua interpreter and I considered to make it just
+    be a random lua library you can just integrate into an existing project
+    but that sucks because no portability anymore.
 
-- Smol aims to tackle some stuff away, but not all:
-    It tries to spare you from having to fiddle you with X or Y,
-    while also running on the best available graphic API for the
-    platform it's being ran on.
+    Smol takes uncompressed .tar files, normally they have the extension
+    ".smol" instead, only to differentiate games from normal tar files
+    (even though they have 0 technical difference other than compression).
 
-    But things like collision handling and vector math are simply
-    out of scope for Smol, as it really only tries to give you a 
-    nice window and simple graphic API abstraction for most platforms.
+    I am considering to add compression to the game stuff too but I feel 
+    like that's probably too taxing on disk bandwidth, and the sole reason
+    of why I am using uncompressed .tar files is because they're portable,
+    simple and should be fast enough for old and new drives.
 
-    I am still considering to add other features to Smol, like audio!
+    I am also considering to add support for zip files because they could 
+    theoretically be attached to the smol binary itself, allowing
+    single-filed games to be made with ease, but that'd also mean that i'd 
+    have to start providing uncompressed binaries which would increase
+    the binary size, but not by a significant much.
+    (ZIP is a pain in the ass though, last time I tried implementing it
+    it was awful oh god, it was just terrible, oh my god, aaah oooh, uh)
 
-- Smol aims to be simple:
-    The idea is that Smol can be learnt by anyone who wants to get
-    their hands into writing their own games, like a fantasy console,
-    without the fantasy, nor the console.
+Branding:
+    I really think the name "smol" is funny but it's also super generic 
+    and I feel like it might be too childish, I have considered to use the
+    word "Deimos", which is the smallest moon in the entire solar system,
+    it being a direct reference that "Lua" translates into "Moon" (portuguese).
 
-    It has a clear use of simple callbacks and simple functions,
-    plus "global" properties you can use to fetch things like:
-        - OS targetted
-        - Backend targetted
-        - Window properties
-        - ETC
+    I also am considering to NOT use anything moon related for the logo,
+    i'm so freaking tired of everything Lua-oriented to straight up be just
+    a fricken moon or whatever, BUT I am planning for Smol to have it's own
+    little wolf-esque mascot, which would probably render in place of a game 
+    just in case the game broke or something, which is something I need to 
+    handle too...
 
-    It tries to stay away from obsessive structuring practices
-    and lets you organize things however you want, from all sorts of
-    complex inherited OOP instances to flat arrays containing rectangles.
-
-    No rules for what you can make or not, as long as you follow some
-    basic rules like drawing only on the sm.draw callback.
-
-- Smol takes inspiration:
-    Smol has a ton of inspiration from Löve, TIC-80 and my own small 
-    game engines written in Lua.
+    (It's hard to be a creative loser with tons of ideas but no willpower to
+    finish them, nor the time, nor the energy, nor anything tbh)

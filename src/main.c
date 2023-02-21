@@ -293,7 +293,7 @@ sapp_desc description = {
     .cleanup_cb = cleanup,
     .event_cb = event,
     .fail_cb = fail,
-    .alpha = 0,
+    .alpha = 0, 
     .sample_count = 2,
     .width = 600,
     .height = 400,
@@ -427,7 +427,7 @@ int sm_backcolor() {
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
-#define floorto(a, b) (floor(a/b)*b)
+#define floorto(a, b) (floorf(a*b)/b)
 
 int sm_rect() {
     // This function appends to a clip-space quad vertex buffer

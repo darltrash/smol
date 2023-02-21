@@ -1,5 +1,5 @@
 CC := clang 
-CFLAGS := -Iassets/ -ffast-math -flto
+CFLAGS := -Iassets/
 CFILES := src/*.c lib/*.c -Ilib/ -Isrc/
 COUT := bin/smol
 SHDCFLAGS := glsl100
@@ -38,11 +38,16 @@ endif
 ifdef NO_SSE 
 	CFLAGS += -DHANDMADE_MATH_NO_SSE -DSTBI_NO_SIMD
 else
-	CFLAGS += -ftree-vectorize
+	CFLAGS += -ftree-vectorize -ffast-math -flto
 endif
+
+# TODO: Handle SMOL_OS from C.
 
 shaders:
 	sokol-shdc --input src/shader.glsl --output src/shader.h --slang $(SHDCFLAGS)
+
+pack-demo:
+	tar -czvf demo.smol demo/* 
 
 demo: shaders
 	tcc $(CFILES) $(CFLAGS) -DSMOL_DEBUG -DMEMBRO_ACTIVATE -DSTBI_NO_SIMD -run demo/

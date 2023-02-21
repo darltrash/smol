@@ -1,0 +1,2 @@
+debian/ubuntu:
+sudo apt install mesa-utils libegl1-mesa-dev mesa-common-dev libxi-dev libxkbcommon-dev libasound2-dev tcc clang make upx 
